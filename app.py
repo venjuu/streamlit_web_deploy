@@ -3,12 +3,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# ===== 페이지 기본 설정 =====
+## ===== 페이지 기본 설정 =====
 st.set_page_config(page_icon="✅", page_title="WM-811K: 좌/우 비교 뷰어", layout="wide")
 st.header("웨이퍼맵 신규 패턴 탐지 — 좌/우 비교")
 st.subheader("목록에서 웨이퍼를 선택해 좌(A) / 우(B)로 배치하고 나란히 비교하세요.")
 
-# ===== 유틸 =====
+## ===== 유틸 =====
 def first_existing(colnames, candidates):
     for c in candidates:
         if c in colnames:
