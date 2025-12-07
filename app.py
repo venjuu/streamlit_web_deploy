@@ -3,23 +3,38 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-plt.rcParams["font.family"] = "Malgun Gothic"   # 윈도우용 기본 한글 폰트
-plt.rcParams["axes.unicode_minus"] = False      # 마이너스 깨짐 방지
 import os, sys, pickle, io
+
+# ===== 한글 폰트 설정 (로컬 + 클라우드 공통) =====
+from matplotlib import font_manager, rcParams
+
+FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "NanumGothic.ttf")
+
+if os.path.exists(FONT_PATH):
+    # 깃허브/클라우드에서 쓸 폰트
+    font_manager.fontManager.addfont(FONT_PATH)
+    rcParams["font.family"] = "NanumGothic"
+else:
+    # 혹시 폰트 파일이 없을 때(로컬 등) 예비 설정
+    rcParams["font.family"] = "Malgun Gothic"
+
+rcParams["axes.unicode_minus"] = False  # 마이너스 깨짐 방지
+# ===============================================
+
 sys.modules.setdefault("numpy._core", np)
 try:
     import numpy.core.multiarray as _multi
     sys.modules.setdefault("numpy._core.multiarray", _multi)
 except Exception:
-    # 혹시 위 import가 실패해도 일단 numpy 자체로 매핑
     sys.modules.setdefault("numpy._core.multiarray", np)
+
 from wafer_pca_utils import (
     build_pca_embeddings,
-    show_with_notice_pca,   # 안 써도 둬도 됨
+    show_with_notice_pca,
     classify_notice,
     CANONICAL_FT,
-    UNLABELED_FT,           # ★ 추가
-    CONFUSABLE_GROUPS,      # ★ 추가
+    UNLABELED_FT,
+    CONFUSABLE_GROUPS,
 )
 
 
@@ -582,7 +597,7 @@ if st.session_state["screen"] == "screen1":
 
         # ---------- 왼쪽: 선택된 웨이퍼 비트맵 표시 ----------
         with col_left:
-            st.subheader("Wafer Bitmap")
+            st.subheader("Wafer Bin map")
 
             # 라디오 선택값 (입력 / 기존)
             list_source = st.session_state.get("wafer_list_source", "입력 데이터 보기")
