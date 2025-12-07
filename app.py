@@ -334,7 +334,8 @@ def get_pca_embeddings_ref_cached(df_ref, map_col_ref):
 
 #  레퍼런스 denoised 데이터 (유사도 검색용) 로드
 # ============================================
-REF_PKL_PATH = r"C:\Users\pc4\Desktop\wbm-811k\LSWMD_denoised.pkl"
+BASE_DIR = os.path.dirname(__file__)          # app.py가 있는 폴더
+REF_PKL_PATH = os.path.join(BASE_DIR, "LSWMD_denoised.pkl")
 
 try:
     df_ref = load_pickle_safe_from_path(REF_PKL_PATH)
