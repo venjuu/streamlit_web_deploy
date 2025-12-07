@@ -8,17 +8,17 @@ import os, sys, pickle, io
 # ===== 한글 폰트 설정 (로컬 + 클라우드 공통) =====
 from matplotlib import font_manager, rcParams
 
-FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "NanumGothic.ttf")
+# 레포지토리 루트에 있는 NanumGothic.ttf 사용
+FONT_PATH = os.path.join(os.path.dirname(__file__), "NanumGothic.ttf")
 
 if os.path.exists(FONT_PATH):
-    # 깃허브/클라우드에서 쓸 폰트
     font_manager.fontManager.addfont(FONT_PATH)
     rcParams["font.family"] = "NanumGothic"
 else:
-    # 혹시 폰트 파일이 없을 때(로컬 등) 예비 설정
+    # 폰트 파일 없을 때 대비(로컬 윈도우용)
     rcParams["font.family"] = "Malgun Gothic"
 
-rcParams["axes.unicode_minus"] = False  # 마이너스 깨짐 방지
+rcParams["axes.unicode_minus"] = False
 # ===============================================
 
 sys.modules.setdefault("numpy._core", np)
