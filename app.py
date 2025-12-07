@@ -37,6 +37,94 @@ from wafer_pca_utils import (
     CONFUSABLE_GROUPS,
 )
 
+# ===== Failure type 별 의심 공정 이슈 텍스트 =====
+FAILURE_CAUSE_TEXT = {
+    "center": """
+**Center 패턴에서 의심되는 공정 이슈**
+
+- CVD/ALD/PVD 공정에서 가스, flux 흐름 패턴의 중심 집중
+- 스핀 코팅(PR, ARC) 중심 두께 이상
+- 노광 장비 중심부 exposure dose 편차
+- Etch 플라즈마 중심 과식각 또는 미식각
+- Anneal(RTA) 중심부 온도 과열 또는 냉점
+- Ion Implant beam profile 중심부 강도 상승
+- CMP pad center zone pressure 편향
+""",
+    "donut": """
+**Donut 패턴에서 의심되는 공정 이슈**
+
+- Deposition/Etch 균일도 보정 실패 (중간 영역 over-correction)
+- Spin coater에서 중간 반경의 PR 막 두께 ridge 형성
+- 플라즈마 균일도 보정 링 문제
+- RTA 가열 램프의 중간 영역 hot ring
+- Wet clean 시 웨이퍼 회전 중 중간 지점에서의 흐름 교란
+""",
+    "edge-loc": """
+**Edge-Local 패턴에서 의심되는 공정 이슈**
+
+- Handling Robot misalignment → edge chip/scratch
+- Edge bead removal(EBR) 불량으로 PR 잔사
+- PVD Target sputtering angle 문제 (edge에서 step coverage 급감)
+- Wet clean에서 edge 표면 tension 문제
+- Etch clamp(O-ring) 오염으로 인한 edge 일부 영역 반응 불량
+- Edge heater / temp zone 불량
+""",
+    "edge-ring": """
+**Edge-Ring 패턴에서 의심되는 공정 이슈**
+
+- EBR over-etch로 PR 손실
+- PVD 필름 step coverage 부족 (edge thinning)
+- Etch clamp zone에서 플라즈마 shielding 발생
+- CVD gas distribution에서 edge depletion
+- RTA edge cooling 문제로 온도 미달 혹은 과열
+- CMP edge pressure profile 문제
+""",
+    "loc": """
+**Local 패턴에서 의심되는 공정 이슈**
+
+- Particle 국부 낙하 → 집중 결함 발생
+- Local contamination (금속, 유기물, water mark 등)
+- Mask defect → 반복되는 동일 위치 패턴 불량
+- Local temperature non-uniformity (heating chuck hotspot)
+- Etch chamber 내부 polymer build-up가 특정 지점에 낙하
+""",
+    "scratch": """
+**Scratch 패턴에서 의심되는 공정 이슈**
+
+- Handling robot arm/pin 접촉
+- CMP pad 또는 서셉터에 낀 particle로 인한 선형 마모
+- FOUP 내부 particle로 인한 선형 마모
+- Wet clean 공정에서 wafer slide
+- Ion Implant에서 wafer mis-load로 인한 mechanical rub
+""",
+    "random": """
+**Random 패턴에서 의심되는 공정 이슈**
+
+- Airborne particle contamination (공기 중 입자 오염)
+- Plasma micro-arcing
+- PR residue로 인한 random defect
+- Random metal contamination
+- Process stability issue (gas flow noise 등)
+""",
+    "near-full": """
+**Near-Full 패턴에서 의심되는 공정 이슈**
+
+- Recipe mis-set (gas flow=0, power=0 등 치명적 recipe error)
+- 장비 malfunction (pump stop, plasma ignition 실패 등)
+- Photoresist 전면 코팅 실패
+- Mask loading error / Wrong reticle 사용
+- Complete wafer mis-processing (step skip 등)
+""",
+    "none": """
+**None (정상) 패턴에서 고려할 사항**
+
+- 정상 혹은 미세 random noise 수준
+- 데이터 threshold 설정 문제 가능성
+- Inline Test sensitivity 재조정 필요
+"""
+}
+# ===============================================
+
 
 
 # ===== 페이지 기본 설정 =====
@@ -175,6 +263,18 @@ def plot_failure_dist(series, title="Failure Type Distribution"):
     fig.tight_layout()
     return fig
 
+def render_failure_causes(ft_str):
+    """failure type 문자열을 받아 해당 공정 이슈 설명을 출력"""
+    if not ft_str:
+        return
+    key = str(ft_str).lower().strip()
+    text = FAILURE_CAUSE_TEXT.get(key)
+    if not text:
+        return
+
+    st.markdown("---")
+    st.subheader("다음과 같은 문제들이 의심됩니다.")
+    st.markdown(text)
 
 # ===== 사이드바: 데이터 로드 =====
 st.sidebar.subheader("데이터 불러오기")
@@ -1066,6 +1166,9 @@ else:
                                     f"{info['conf_all'] * 100:.1f}%"
                                 )
                                 st.write(f"- notice_type: {info['notice_type']}")
+
+                                # 예측된 failure type 기준으로 의심 공정 이슈 출력
+                                render_failure_causes(info.get("pred_ft") or info.get("q_label"))
 
                 st.markdown("---")
 
