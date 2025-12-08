@@ -625,8 +625,10 @@ if st.session_state["screen"] == "screen1":
         with col_left:
             st.subheader("Wafer Bin map")
 
+            # 라디오 선택값 (입력 / 기존)
             list_source = st.session_state.get("wafer_list_source", "입력 데이터 보기")
 
+            # 테이블에서 선택된 UID → index로 변환
             selected_index_from_table_input = None
             selected_index_from_table_ref = None
 
@@ -642,10 +644,12 @@ if st.session_state["screen"] == "screen1":
                 if idx_list_ref:
                     selected_index_from_table_ref = idx_list_ref[0]
 
+            # 1순위: 드롭다운(입력 데이터용)
             if selected_index_from_dropdown is not None:
                 current_source = "input"
                 current_index = selected_index_from_dropdown
             else:
+                # 2순위: 현재 보고 있는 리스트의 Visualization 선택
                 if list_source == "입력 데이터 보기":
                     current_source = "input"
                     current_index = selected_index_from_table_input
@@ -663,6 +667,10 @@ if st.session_state["screen"] == "screen1":
                     ftype = row["_FailureType_norm"]
                     uid = row["_UID"]
                     arr = to_np_bitmap(row[map_col_main])
+
+                    # ✅ Wafer Lists(meta_sorted) 기준 index
+                    meta_idx_list = meta_sorted.index[meta_sorted["UniqueID"] == uid].tolist()
+                    display_idx = int(meta_idx_list[0]) if meta_idx_list else None
                 else:
                     row = df_ref.loc[current_index]
                     lot = row["_Lot_str"]
@@ -676,6 +684,10 @@ if st.session_state["screen"] == "screen1":
                     uid = row["_UID"]
                     arr = to_np_bitmap(row[map_col_ref])
 
+                    # ✅ 기존 데이터 리스트(meta_ref_sorted) 기준 index
+                    meta_idx_list = meta_ref_sorted.index[meta_ref_sorted["UniqueID"] == uid].tolist()
+                    display_idx = int(meta_idx_list[0]) if meta_idx_list else None
+
                 fig = plot_wafer(arr)
                 st.pyplot(fig, clear_figure=True)
 
@@ -684,8 +696,8 @@ if st.session_state["screen"] == "screen1":
                     ### Selected wafer information  
 
                     <div style="font-size:20px; line-height:1.7; margin-top:10px;">
+                        <b>Index :</b> {display_idx if display_idx is not None else '-'}<br>
                         <b>Lot :</b> {lot}<br>
-                        <b>Wafer :</b> {widx}<br>
                         <b>Failure Type :</b> {ftype if ftype else 'none'}<br>
                     </div>
                     """,
@@ -1066,35 +1078,37 @@ else:
                                 st.markdown(html, unsafe_allow_html=True)
 
                         with col_left:
-                            st.markdown("**Notice**")
-                
-                            # ✅ Wafer Lists 기준 index (사용자가 입력한 index)
-                            idx_meta = st.session_state.get("detected_meta_index")
-                            if idx_meta is None:
-                                # 혹시 세션에 없으면 UID로 한 번 더 역추적
-                                try:
-                                    uid_q = df.loc[info["idx_query"], "_UID"]
-                                    idx_list_meta = meta_sorted.index[meta_sorted["UniqueID"] == uid_q].tolist()
-                                    if idx_list_meta:
-                                        idx_meta = int(idx_list_meta[0])
-                                    else:
+                                st.markdown("**Notice**")
+
+                                # ✅ Wafer Lists 기준 index (사용자가 입력한 index)
+                                idx_meta = st.session_state.get("detected_meta_index")
+                                if idx_meta is None:
+                                    # 세션에 없으면 UID로 역추적
+                                    try:
+                                        uid_q = df.loc[info["idx_query"], "_UID"]
+                                        idx_list_meta = meta_sorted.index[
+                                            meta_sorted["UniqueID"] == uid_q
+                                        ].tolist()
+                                        if idx_list_meta:
+                                            idx_meta = int(idx_list_meta[0])
+                                        else:
+                                            idx_meta = int(info["idx_query"])
+                                    except Exception:
                                         idx_meta = int(info["idx_query"])
-                                except Exception:
-                                    idx_meta = int(info["idx_query"])
-                
-                            st.write(f"- 쿼리 인덱스: {idx_meta}")      # 👈 여기만 화면에 보여줌 (Wafer Lists 기준)
-                
-                            st.write(f"- 쿼리 레이블: {info['q_label']}")
-                            st.write(f"- 예측 패턴(pred_ft): {info['pred_ft']}")
-                            st.write(f"- top1 cos: {info['top1_cos']:.4f}")
-                            st.write(f"- 이웃 일관성(vote_top_k): {info['conf'] * 100:.1f}%")
-                            st.write(
-                                f"- 이웃 일관성(top-{len(info['neighbor_indices'])}): "
-                                f"{info['conf_all'] * 100:.1f}%"
-                            )
-                            st.write(f"- notice_type: {info['notice_type']}")
-                
-                            # 예측된 failure type 기준으로 의심 공정 이슈 출력
-                            render_failure_causes(info.get("pred_ft") or info.get("q_label"))
+
+                                st.write(f"- 쿼리 인덱스: {idx_meta}")  # 👈 Wafer Lists 기준 index
+
+                                st.write(f"- 쿼리 레이블: {info['q_label']}")
+                                st.write(f"- 예측 패턴(pred_ft): {info['pred_ft']}")
+                                st.write(f"- top1 cos: {info['top1_cos']:.4f}")
+                                st.write(f"- 이웃 일관성(vote_top_k): {info['conf'] * 100:.1f}%")
+                                st.write(
+                                    f"- 이웃 일관성(top-{len(info['neighbor_indices'])}): "
+                                    f"{info['conf_all'] * 100:.1f}%"
+                                )
+                                st.write(f"- notice_type: {info['notice_type']}")
+
+                                # 예측된 failure type 기준으로 의심 공정 이슈 출력
+                                render_failure_causes(info.get("pred_ft") or info.get("q_label"))
 
             st.markdown("---")
