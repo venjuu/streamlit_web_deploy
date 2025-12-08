@@ -833,18 +833,18 @@ else:
 
     col_left, col_right = st.columns(2)
 
-    # ===== 왼쪽: Detection용 df.index 선택 =====
+    # ===== 왼쪽: Detection용 index 선택 =====
     with col_left:
-    # 현재 df.index 범위 안내
-    idx_min = 0
-    idx_max = len(meta_sorted) - 1
-    st.caption(f"현재 데이터 index 범위 (Wafer Lists 기준): {idx_min} ~ {idx_max}")
+        # 현재 df.index 범위 안내 (Wafer Lists 기준)
+        idx_min = 0
+        idx_max = len(meta_sorted) - 1
+        st.caption(f"현재 데이터 index 범위 (Wafer Lists 기준): {idx_min} ~ {idx_max}")
 
-    idx_query_str = st.text_input(
-        "Detection용 index 입력 (예: 50)",
-        value="",
-        key="idx_screen2"
-    )
+        idx_query_str = st.text_input(
+            "Detection용 index 입력 (예: 50)",
+            value="",
+            key="idx_screen2"
+        )
 
     selected_index2 = None  # 이번에 입력한 인덱스
 
