@@ -835,49 +835,70 @@ else:
 
     # ===== 왼쪽: Detection용 df.index 선택 =====
     with col_left:
-        # 현재 df.index 범위 안내
-        idx_min = int(df.index.min())
-        idx_max = int(df.index.max())
-        st.caption(f"현재 데이터 index 범위: {idx_min} ~ {idx_max}")
+    # 현재 df.index 범위 안내
+    idx_min = 0
+    idx_max = len(meta_sorted) - 1
+    st.caption(f"현재 데이터 index 범위 (Wafer Lists 기준): {idx_min} ~ {idx_max}")
 
-        idx_query_str = st.text_input(
-            "Detection용 index 입력 (예: 50)",
-            value="",
-            key="idx_screen2"
-        )
+    idx_query_str = st.text_input(
+        "Detection용 index 입력 (예: 50)",
+        value="",
+        key="idx_screen2"
+    )
 
-        selected_index2 = None  # 이번에 입력한 인덱스
+    selected_index2 = None  # 이번에 입력한 인덱스
 
-        if idx_query_str.strip() == "":
-            st.info("index를 입력하면 Detection용 웨이퍼 선택이 가능합니다.")
-        else:
-            try:
-                idx_val = int(idx_query_str.strip())
-            except ValueError:
-                st.error("정수 형태의 index를 입력하세요. (예: 50)")
-                idx_val = None
+    if idx_query_str.strip() == "":
+        st.info("index를 입력하면 Detection용 웨이퍼 선택이 가능합니다.")
+    else:
+        try:
+            idx_val = int(idx_query_str.strip())
+        except ValueError:
+            st.error("정수 형태의 index를 입력하세요. (예: 50)")
+            idx_val = None
 
-            if idx_val is not None:
-                if idx_val in df.index:
-                    st.write(f"입력한 index: **{idx_val}**")
-                    # "이 웨이퍼 보기" 누르면 session_state에 저장
-                    if st.button("이 웨이퍼 보기", key="btn_show_wafer"):
-                        st.session_state["detected_wafer_index"] = idx_val
-                    selected_index2 = idx_val
+        if idx_val is not None:
+            # ✅ meta_sorted 기준으로 유효성 검사
+            if 0 <= idx_val < len(meta_sorted):
+                # meta_sorted에서 UID 찾기
+                uid_sel = meta_sorted.iloc[idx_val]["UniqueID"]
+
+                # UID로 원본 df.index 찾기
+                matches = df.index[df["_UID"] == uid_sel].tolist()
+                if not matches:
+                    st.error("이 UID에 해당하는 웨이퍼를 df에서 찾지 못했습니다.")
                 else:
-                    st.warning(f"index {idx_val} 가 데이터프레임에 존재하지 않습니다.")
+                    mapped_idx = matches[0]  # 실제 df.index
 
-        # 2) session_state 에 저장된 웨이퍼를 항상 왼쪽에 표시
-        idx_to_plot = st.session_state.get("detected_wafer_index", None)
-        if idx_to_plot is not None:
-            row = df.loc[idx_to_plot]
-            lot   = row["_Lot_str"]
-            widx  = row["_WaferIndex_str"]
-            ftype = row["_FailureType_norm"]
-            uid   = row["_UID"]
-            arr   = to_np_bitmap(row[map_col_main])
+                    st.write(f"입력한 index (Wafer Lists 기준): **{idx_val}**")
 
-            st.markdown("**선택된 웨이퍼 정보**")
+                    if st.button("이 웨이퍼 보기", key="btn_show_wafer"):
+                        # PCA / 플롯은 계속 df.index를 사용
+                        st.session_state["detected_wafer_index"] = mapped_idx
+                        st.session_state["detected_meta_index"] = idx_val
+
+                    selected_index2 = mapped_idx  # base_index용(df.index)
+            else:
+                st.warning(f"{idx_min} ~ {idx_max} 범위의 정수를 입력하세요.")
+
+    # 2) session_state 에 저장된 웨이퍼를 항상 왼쪽에 표시
+    idx_to_plot = st.session_state.get("detected_wafer_index", None)
+    if idx_to_plot is not None:
+        row = df.loc[idx_to_plot]
+        lot = row["_Lot_str"]
+        widx = row["_WaferIndex_str"]
+        ftype = row["_FailureType_norm"]
+        uid = row["_UID"]
+        arr = to_np_bitmap(row[map_col_main])
+
+        # ✅ meta_sorted에서 이 UID가 몇 번째 행인지 찾기
+        meta_idx_list = meta_sorted.index[meta_sorted["UniqueID"] == uid].tolist()
+        if meta_idx_list:
+            display_idx = int(meta_idx_list[0])  # Wafer Lists에서 보이는 index
+        else:
+            display_idx = idx_to_plot  # 혹시 못 찾으면 df.index라도 표시
+
+        st.markdown("**선택된 웨이퍼 정보**")
 
             info_df = pd.DataFrame(
                 {
