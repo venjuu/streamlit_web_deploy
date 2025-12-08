@@ -1067,7 +1067,23 @@ else:
 
                         with col_left:
                             st.markdown("**Notice**")
-                            st.write(f"- 쿼리 인덱스: {info['idx_query']}")
+                
+                            # ✅ Wafer Lists 기준 index (사용자가 입력한 index)
+                            idx_meta = st.session_state.get("detected_meta_index")
+                            if idx_meta is None:
+                                # 혹시 세션에 없으면 UID로 한 번 더 역추적
+                                try:
+                                    uid_q = df.loc[info["idx_query"], "_UID"]
+                                    idx_list_meta = meta_sorted.index[meta_sorted["UniqueID"] == uid_q].tolist()
+                                    if idx_list_meta:
+                                        idx_meta = int(idx_list_meta[0])
+                                    else:
+                                        idx_meta = int(info["idx_query"])
+                                except Exception:
+                                    idx_meta = int(info["idx_query"])
+                
+                            st.write(f"- 쿼리 인덱스: {idx_meta}")      # 👈 여기만 화면에 보여줌 (Wafer Lists 기준)
+                
                             st.write(f"- 쿼리 레이블: {info['q_label']}")
                             st.write(f"- 예측 패턴(pred_ft): {info['pred_ft']}")
                             st.write(f"- top1 cos: {info['top1_cos']:.4f}")
@@ -1077,7 +1093,8 @@ else:
                                 f"{info['conf_all'] * 100:.1f}%"
                             )
                             st.write(f"- notice_type: {info['notice_type']}")
-
+                
+                            # 예측된 failure type 기준으로 의심 공정 이슈 출력
                             render_failure_causes(info.get("pred_ft") or info.get("q_label"))
 
             st.markdown("---")
