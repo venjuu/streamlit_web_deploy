@@ -846,83 +846,83 @@ else:
             key="idx_screen2"
         )
 
-    selected_index2 = None  # 이번에 입력한 인덱스
-
-    if idx_query_str.strip() == "":
-        st.info("index를 입력하면 Detection용 웨이퍼 선택이 가능합니다.")
-    else:
-        try:
-            idx_val = int(idx_query_str.strip())
-        except ValueError:
-            st.error("정수 형태의 index를 입력하세요. (예: 50)")
-            idx_val = None
-
-        if idx_val is not None:
-            # ✅ meta_sorted 기준으로 유효성 검사
-            if 0 <= idx_val < len(meta_sorted):
-                # meta_sorted에서 UID 찾기
-                uid_sel = meta_sorted.iloc[idx_val]["UniqueID"]
-
-                # UID로 원본 df.index 찾기
-                matches = df.index[df["_UID"] == uid_sel].tolist()
-                if not matches:
-                    st.error("이 UID에 해당하는 웨이퍼를 df에서 찾지 못했습니다.")
-                else:
-                    mapped_idx = matches[0]  # 실제 df.index
-
-                    st.write(f"입력한 index (Wafer Lists 기준): **{idx_val}**")
-
-                    if st.button("이 웨이퍼 보기", key="btn_show_wafer"):
-                        # PCA / 플롯은 계속 df.index를 사용
-                        st.session_state["detected_wafer_index"] = mapped_idx
-                        st.session_state["detected_meta_index"] = idx_val
-
-                    selected_index2 = mapped_idx  # base_index용(df.index)
-            else:
-                st.warning(f"{idx_min} ~ {idx_max} 범위의 정수를 입력하세요.")
-
-    # 2) session_state 에 저장된 웨이퍼를 항상 왼쪽에 표시
-    idx_to_plot = st.session_state.get("detected_wafer_index", None)
-    if idx_to_plot is not None:
-        row = df.loc[idx_to_plot]
-        lot = row["_Lot_str"]
-        widx = row["_WaferIndex_str"]
-        ftype = row["_FailureType_norm"]
-        uid = row["_UID"]
-        arr = to_np_bitmap(row[map_col_main])
-
-        # ✅ meta_sorted에서 이 UID가 몇 번째 행인지 찾기
-        meta_idx_list = meta_sorted.index[meta_sorted["UniqueID"] == uid].tolist()
-        if meta_idx_list:
-            display_idx = int(meta_idx_list[0])  # Wafer Lists에서 보이는 index
+        selected_index2 = None  # 이번에 입력한 인덱스
+    
+        if idx_query_str.strip() == "":
+            st.info("index를 입력하면 Detection용 웨이퍼 선택이 가능합니다.")
         else:
-            display_idx = idx_to_plot  # 혹시 못 찾으면 df.index라도 표시
-
-        st.markdown("**선택된 웨이퍼 정보**")
-
-            info_df = pd.DataFrame(
-                {
-                    "index": [idx_to_plot],
-                    "Lot": [lot],
-                    "Wafer": [widx],
-                    "Failure": [ftype if ftype else "none"],
-                }
-            )
-
-            # 가운데 정렬 + DataFrame index 숨기기
-            html_table = info_df.to_html(index=False, justify="center")
-
-            st.markdown(
-                f"""
-                <div style="display:flex; justify-content:center; margin-bottom:10px;">
-                    {html_table}
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            fig = plot_wafer(arr)
-            st.pyplot(fig, clear_figure=True)
+            try:
+                idx_val = int(idx_query_str.strip())
+            except ValueError:
+                st.error("정수 형태의 index를 입력하세요. (예: 50)")
+                idx_val = None
+    
+            if idx_val is not None:
+                # ✅ meta_sorted 기준으로 유효성 검사
+                if 0 <= idx_val < len(meta_sorted):
+                    # meta_sorted에서 UID 찾기
+                    uid_sel = meta_sorted.iloc[idx_val]["UniqueID"]
+    
+                    # UID로 원본 df.index 찾기
+                    matches = df.index[df["_UID"] == uid_sel].tolist()
+                    if not matches:
+                        st.error("이 UID에 해당하는 웨이퍼를 df에서 찾지 못했습니다.")
+                    else:
+                        mapped_idx = matches[0]  # 실제 df.index
+    
+                        st.write(f"입력한 index (Wafer Lists 기준): **{idx_val}**")
+    
+                        if st.button("이 웨이퍼 보기", key="btn_show_wafer"):
+                            # PCA / 플롯은 계속 df.index를 사용
+                            st.session_state["detected_wafer_index"] = mapped_idx
+                            st.session_state["detected_meta_index"] = idx_val
+    
+                        selected_index2 = mapped_idx  # base_index용(df.index)
+                else:
+                    st.warning(f"{idx_min} ~ {idx_max} 범위의 정수를 입력하세요.")
+    
+        # 2) session_state 에 저장된 웨이퍼를 항상 왼쪽에 표시
+        idx_to_plot = st.session_state.get("detected_wafer_index", None)
+        if idx_to_plot is not None:
+            row = df.loc[idx_to_plot]
+            lot = row["_Lot_str"]
+            widx = row["_WaferIndex_str"]
+            ftype = row["_FailureType_norm"]
+            uid = row["_UID"]
+            arr = to_np_bitmap(row[map_col_main])
+    
+            # ✅ meta_sorted에서 이 UID가 몇 번째 행인지 찾기
+            meta_idx_list = meta_sorted.index[meta_sorted["UniqueID"] == uid].tolist()
+            if meta_idx_list:
+                display_idx = int(meta_idx_list[0])  # Wafer Lists에서 보이는 index
+            else:
+                display_idx = idx_to_plot  # 혹시 못 찾으면 df.index라도 표시
+    
+            st.markdown("**선택된 웨이퍼 정보**")
+    
+                info_df = pd.DataFrame(
+                    {
+                        "index": [idx_to_plot],
+                        "Lot": [lot],
+                        "Wafer": [widx],
+                        "Failure": [ftype if ftype else "none"],
+                    }
+                )
+    
+                # 가운데 정렬 + DataFrame index 숨기기
+                html_table = info_df.to_html(index=False, justify="center")
+    
+                st.markdown(
+                    f"""
+                    <div style="display:flex; justify-content:center; margin-bottom:10px;">
+                        {html_table}
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+    
+                fig = plot_wafer(arr)
+                st.pyplot(fig, clear_figure=True)
 
         # ===== 오른쪽: PCA 기반 유사 웨이퍼 검색 =====
         with col_right:
